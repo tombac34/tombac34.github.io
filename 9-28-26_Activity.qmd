@@ -1,0 +1,65 @@
+---
+title: "9-28-26 Activity"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(reactable)
+library(crosstalk)
+library(DT)
+library(plotly)
+
+df <- read.csv("https://manctsui.github.io/datasets/timesData.csv")
+reactable(df, defaultPageSize = 4, searchable = TRUE)
+```
+
+```{r}
+
+top_countries <- df |> count(country, name = "number_of_universities") |> arrange(desc(number_of_universities)) |> head(3)
+
+reactable(top_countries, columns = list(country = colDef(name = "Country"), number_of_universities = colDef(name = "Number of Universities" )), searchable = FALSE)
+```
+
+```{r}
+
+ggplot(top_countries, aes(x = reorder(country, number_of_universities), y = number_of_universities)) + geom_col() + labs(title = "Three Countries with the Most Universities", x = "Country", y = "Number of Universities" )
+```
+
+```{r}
+
+top_50_2011 <- df |> filter(year == 2011) |> arrange(world_rank) |> head(50) |> select(world_rank, university_name)
+
+reactable(top_50_2011, columns = list(world_rank = colDef(name = "Rank"), university_name = colDef(name = "University Name")), searchable = FALSE)
+```
+
+The rank column wouldn't necessarily be a good key to use if the data was a ShareData object. This is because there are many errors with the rank data, with some numbers being repeated or out of order.
+
+```{r}
+rank_data <- df |> select(university_name, country, world_rank, year)
+shared_rank_data <- SharedData$new(rank_data, key = ~world_rank)
+
+filter_slider(id = "rank", label = "University Rank", sharedData = shared_rank_data, column = ~world_rank, step = 1, width = "100%", min = 1, max = 800)  # Not working?
+```
+
+```{r}
+data_2016 <- df |> 
+  filter(year == 2016) |> 
+  mutate(university_year = paste(university_name, year, sep = "_")) |> 
+  select(university_year, university_name, country, world_rank, num_students, student_staff_ratio, teaching) |> 
+    drop_na(num_students, student_staff_ratio, teaching)
+shared_2016 <- SharedData$new(data_2016, key = ~university_year)
+
+plot1 <- ggplot(shared_2016, aes(x = student_staff_ratio, y = num_students)) +
+      geom_point() +
+      labs(title = "Number of Students vs. Student-Staff Ratio", x = "Student-Staff Ratio", y = "Number of Students")
+    
+plot2 <- ggplot(shared_2016, aes(x = student_staff_ratio, y = teaching)) +
+         geom_point() +
+         labs(title = "Student-Staff Ratio vs. Teaching Score", x = "Student-Staff Ratio", y = "Teaching Score")
+       
+plot1 <- ggplotly(plot1, tooltip = "text")
+plot2 <- ggplotly(plot2, tooltip = "text")
+bscols(widths = c(6, 6), plot1, plot2)
+```

@@ -1,0 +1,33 @@
+---
+title: "STAT 01511 9/21 Activity"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+
+df <- read.csv("https://manctsui.github.io/datasets/timesData.csv")
+head(df)
+```
+
+```{r}
+
+df |>
+  filter(university_name == 'University of Pennsylvania') |>
+  select('world_rank')
+```
+
+```{r}
+#| layout-ncol: 2
+
+
+UPenn <- filter(df, university_name == 'University of Pennsylvania')
+ggplot(UPenn, mapping = aes(x = year, y = world_rank)) + geom_point()
+
+UCB <- filter(df, university_name == 'University of California, Berkeley')
+ggplot(UCB, mapping = aes(x = year, y = world_rank)) + geom_point()
+```
